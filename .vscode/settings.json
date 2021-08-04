@@ -7,5 +7,8 @@
     "source.organizeImports",
     "source.fixAll.eslint",
     "source.fixAll.stylelint"
-  ]
+  ],
+  "editor.formatOnPaste": false,
+  "editor.formatOnSave": true,
+  "editor.formatOnType": false,
 }
