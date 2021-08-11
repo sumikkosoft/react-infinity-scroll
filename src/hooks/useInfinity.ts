@@ -1,6 +1,7 @@
 import { useSWRInfinite } from "swr";
 
 export const useInfinity = () => {
+  console.log("inf");
   const getKey = (pageIndex: number) => {
     return pageIndex.toString();
   };
@@ -12,7 +13,7 @@ export const useInfinity = () => {
     });
   };
 
-  const { data, size, setSize } = useSWRInfinite<string[]>(getKey, fetcher);
+  const { data, size, setSize, isValidating } = useSWRInfinite<string[]>(getKey, fetcher);
 
-  return [data, size, setSize];
+  return { data, size, setSize, isValidating };
 };

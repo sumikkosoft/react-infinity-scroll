@@ -1,46 +1,76 @@
-import React, { useState } from "react";
-import { useInfinity } from "../../hooks/useInfinity";
-import { useScroll } from "../../hooks/useScroll";
+import React, { useEffect } from "react";
+import { useSWRInfinite } from "swr";
+import { useIntersection } from "../../hooks/useIntersection";
 
 type Props = {
   fallback: JSX.Element;
 };
 
-const ItemList: React.VFC<{ items: string[] }> = React.memo(({ items }) => {
-  return (
-    <>
-      {items.map((v) => {
-        return (
-          <div
-            key={`box-${v}`}
-            className="flex items-center justify-center h-12 rounded-md mb-4 bg-gray-300"
-          >
-            <span>{`box-${v}`}</span>
-          </div>
-        );
-      })}
-    </>
-  );
-});
+const getKey = (pageIndex: number) => {
+  return pageIndex.toString();
+};
+const fetcher = (key: string): Promise<string[]> => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve([...Array(30)].map((_, index) => `item-${Number(key) * 30 + index + 1}`));
+    }, 3000);
+  });
+};
+
+// const Items: React.VFC<{ items: string[] }> = React.memo(({ items }) => {
+//   return (
+//     <>
+//       {items.map((v) => {
+//         return (
+//           <div
+//             key={`box-${v}`}
+//             className="flex items-center justify-center h-12 rounded-md mb-4 bg-gray-300"
+//           >
+//             <span>{`box-${v}`}</span>
+//           </div>
+//         );
+//       })}
+//     </>
+//   );
+// });
 
 export const InfinityScroll: React.VFC<Props> = ({ fallback }) => {
-  const [scroll] = useScroll(1000);
-  const [items, setItem] = useState<string[]>([]);
-  const [isLoad, setState] = useState<boolean>(true);
-  const [data, size, setData] = useInfinity();
+  const { data, setSize, isValidating } = useSWRInfinite<string[]>(getKey, fetcher);
+  const [intersecting, ref] = useIntersection<HTMLDivElement>();
+
+  useEffect(() => {
+    if (intersecting && !isValidating) {
+      setSize((prev) => prev + 1);
+    }
+  }, [intersecting, isValidating, setSize]);
+
+  if (!data) return <>{fallback}</>;
 
   return (
-    <div>
-      {data && <ItemList items={data.flat()} />}
-      {!data && fallback}
-      <button
-        className="p-2 bg-gray-100"
-        onClick={() => {
-          setData(size + 1);
-        }}
-      >
-        add
-      </button>
-    </div>
+    <>
+      {data.map((items) => {
+        return items.map((v) => {
+          return (
+            <div
+              key={`box-${v}`}
+              className="flex items-center justify-center h-12 rounded-md mb-4 bg-gray-300"
+            >
+              <span>{`box-${v}`}</span>
+            </div>
+          );
+        });
+      })}
+      <div className="relative">
+        <div ref={ref} className="absolute"></div>
+        {fallback}
+        {/* <button
+          onClick={() => {
+            setSize((prev) => prev + 1);
+          }}
+        >
+          click
+        </button> */}
+      </div>
+    </>
   );
 };
