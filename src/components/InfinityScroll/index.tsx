@@ -1,75 +1,46 @@
 import React, { useEffect } from "react";
-import { useSWRInfinite } from "swr";
+import type { SWRInfiniteResponse } from "swr";
 import { useIntersection } from "../../hooks/useIntersection";
 
-type Props = {
-  fallback: JSX.Element;
+type Props<T> = {
+  swr: SWRInfiniteResponse<T>;
+  children: (item: T) => React.ReactNode;
+  type?: "auto" | "click";
+  loadingIndicator?: React.ReactNode;
+  endingIndicator?: React.ReactNode;
+  clickIndicator?: React.ReactNode;
+  isReachingEnd: boolean | ((swr: SWRInfiniteResponse<T>) => boolean);
 };
 
-const getKey = (pageIndex: number) => {
-  return pageIndex.toString();
-};
-const fetcher = (key: string): Promise<string[]> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve([...Array(30)].map((_, index) => `item-${Number(key) * 30 + index + 1}`));
-    }, 3000);
-  });
-};
+export const InfinityScroll = <T extends {}>(props: Props<T>): React.ReactElement<Props<T>> => {
+  const {
+    swr,
+    swr: { data, setSize },
+    children,
+    loadingIndicator,
+    endingIndicator,
+    isReachingEnd,
+  } = props;
 
-// const Items: React.VFC<{ items: string[] }> = React.memo(({ items }) => {
-//   return (
-//     <>
-//       {items.map((v) => {
-//         return (
-//           <div
-//             key={`box-${v}`}
-//             className="flex items-center justify-center h-12 rounded-md mb-4 bg-gray-300"
-//           >
-//             <span>{`box-${v}`}</span>
-//           </div>
-//         );
-//       })}
-//     </>
-//   );
-// });
-
-export const InfinityScroll: React.VFC<Props> = ({ fallback }) => {
-  const { data, setSize, isValidating } = useSWRInfinite<string[]>(getKey, fetcher);
   const [intersecting, ref] = useIntersection<HTMLDivElement>();
 
-  useEffect(() => {
-    if (intersecting && !isValidating) {
-      setSize((prev) => prev + 1);
-    }
-  }, [intersecting, isValidating, setSize]);
+  const ending = typeof isReachingEnd === "function" ? isReachingEnd(swr) : isReachingEnd;
 
-  if (!data) return <>{fallback}</>;
+  useEffect(() => {
+    if (intersecting && !ending) {
+      console.log("add");
+      setSize((size) => size + 1);
+    }
+  }, [intersecting, setSize, ending]);
+
+  if (!data) return <>{loadingIndicator}</>;
 
   return (
     <>
-      {data.map((items) => {
-        return items.map((v) => {
-          return (
-            <div
-              key={`box-${v}`}
-              className="flex items-center justify-center h-12 rounded-md mb-4 bg-gray-300"
-            >
-              <span>{`box-${v}`}</span>
-            </div>
-          );
-        });
-      })}
+      {data.map((item) => children(item))}
       <div className="relative">
-        <div ref={ref} className="absolute"></div>
-        {fallback}
-        {/* <button
-          onClick={() => {
-            setSize((prev) => prev + 1);
-          }}
-        >
-          click
-        </button> */}
+        <div className="absolute" ref={ref}></div>
+        {ending ? endingIndicator : loadingIndicator}
       </div>
     </>
   );
