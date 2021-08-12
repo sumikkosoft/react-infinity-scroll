@@ -4,6 +4,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "vite",
+    "build": "vite build --base=/react-infinity-scroll/",
     "format": "prettier -w ./src/**"
   },
   "devDependencies": {
