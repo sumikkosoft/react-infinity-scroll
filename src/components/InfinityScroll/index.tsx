@@ -15,10 +15,12 @@ type Props<T> = {
 export const InfinityScroll = <T extends {}>(props: Props<T>): React.ReactElement<Props<T>> => {
   const {
     swr,
-    swr: { data, setSize },
+    swr: { data, setSize, isValidating },
+    type = "auto",
     children,
-    loadingIndicator,
-    endingIndicator,
+    loadingIndicator = <p>読込中</p>,
+    endingIndicator = <p>終わり</p>,
+    clickIndicator = <p>もっと読み込む</p>,
     isReachingEnd,
   } = props;
 
@@ -28,7 +30,6 @@ export const InfinityScroll = <T extends {}>(props: Props<T>): React.ReactElemen
 
   useEffect(() => {
     if (intersecting && !ending) {
-      console.log("add");
       setSize((size) => size + 1);
     }
   }, [intersecting, setSize, ending]);
@@ -38,10 +39,22 @@ export const InfinityScroll = <T extends {}>(props: Props<T>): React.ReactElemen
   return (
     <>
       {data.map((item) => children(item))}
-      <div className="relative">
-        <div className="absolute" ref={ref}></div>
-        {ending ? endingIndicator : loadingIndicator}
-      </div>
+      {type === "auto" && (
+        <div className="relative">
+          <div className="absolute" ref={ref}></div>
+          {ending ? endingIndicator : loadingIndicator}
+        </div>
+      )}
+      {type === "click" && (
+        <div
+          className="relative cursor-pointer"
+          onClick={() => {
+            setSize((size) => size + 1);
+          }}
+        >
+          {ending ? endingIndicator : isValidating ? loadingIndicator : clickIndicator}
+        </div>
+      )}
     </>
   );
 };
